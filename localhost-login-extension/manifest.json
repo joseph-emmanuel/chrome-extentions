@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Localhost Login Session Trigger",
+  "version": "1.0.0",
+  "description": "Opens https://localhost/login in a background tab to refresh session.",
+  "permissions": ["tabs"],
+  "host_permissions": ["https://localhost/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "trigger-login": {
+      "description": "Trigger background load of https://localhost/login"
+    }
+  }
+}
