@@ -1,42 +1,32 @@
 const LOGIN_URL = "https://localhost/login";
-
-// How long to keep the background tab open (ms).
-// Increase if your login page takes longer to set session.
-const CLOSE_AFTER_MS = 1500;
+const RETURN_DELAY_MS = 3000;
 
 chrome.commands.onCommand.addListener(async (command) => {
   if (command !== "trigger-login") return;
 
   try {
-    // Try to find an existing background tab already on the login URL
-    const existingTabs = await chrome.tabs.query({ url: LOGIN_URL });
-
-    if (existingTabs.length > 0) {
-      const tabId = existingTabs[0].id;
-
-      // Reload it without focusing
-      await chrome.tabs.reload(tabId, { bypassCache: true });
-
-      // Optionally close it after a short delay
-      setTimeout(() => {
-        chrome.tabs.remove(tabId).catch(() => {});
-      }, CLOSE_AFTER_MS);
-
-      return;
-    }
-
-    // Otherwise open a new inactive (background) tab
-    const tab = await chrome.tabs.create({
-      url: LOGIN_URL,
-      active: false
+    const tabs = await chrome.tabs.query({
+      active: true,
+      currentWindow: true
     });
 
-    // Close it after a short delay
-    setTimeout(() => {
-      if (tab?.id != null) chrome.tabs.remove(tab.id).catch(() => {});
-    }, CLOSE_AFTER_MS);
-  } catch (err) {
-    // If something fails, do nothing (keeps it silent)
-    // You can inspect errors by viewing service worker logs in Extensions page.
-  }
+    if (!tabs || tabs.length === 0) return;
+
+    const tab = tabs[0];
+    const tabId = tab.id;
+    const originalUrl = tab.url;
+
+    if (!tabId || !originalUrl) return;
+
+    if (originalUrl.includes("/login")) return;
+
+    await chrome.tabs.update(tabId, { url: LOGIN_URL });
+
+    setTimeout(async () => {
+      try {
+        await chrome.tabs.update(tabId, { url: originalUrl });
+      } catch (e) {}
+    }, RETURN_DELAY_MS);
+
+  } catch (err) {}
 });
